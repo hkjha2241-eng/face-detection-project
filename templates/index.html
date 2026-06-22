@@ -2,54 +2,246 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Face Detection Web UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visionary | AI Face Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .preview { max-width: 100%; margin-top: 20px; border-radius: 8px; display: none; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        input { margin-bottom: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Custom red glow effect */
+        .glow-red {
+            box-shadow: 0 0 40px rgba(220, 38, 38, 0.2);
+        }
+        
+        .btn-glow {
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.4);
+        }
+
+        /* Hide the ugly default file input */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Smooth image reveal */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col relative">
 
-<div class="container">
-    <h2>Face Detection System</h2>
-    
-    <input type="file" id="imageInput" accept="image/*"><br>
-    <button onclick="uploadAndDetect()">Detect Image</button>
-    
-    <br>
-    <img id="resultImage" class="preview" alt="Detection Result">
-</div>
+    <!-- Background Decorative Elements -->
+    <div class="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-red-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-red-800/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-<script>
-async function uploadAndDetect() {
-    const input = document.getElementById('imageInput');
-    if (input.files.length === 0) {
-        alert('Please select an image file first.');
-        return;
-    }
+    <!-- Navigation Bar -->
+    <nav class="w-full px-8 py-6 flex justify-between items-center z-10">
+        <div class="text-2xl font-bold tracking-tighter">
+            visionary<span class="text-red-500">.</span>
+        </div>
+        <div class="hidden md:flex gap-8 text-sm text-gray-400">
+            <a href="#" class="hover:text-white transition">Model Architecture</a>
+            <a href="#" class="hover:text-white transition">Dataset</a>
+            <a href="#" class="hover:text-white transition">Metrics</a>
+        </div>
+        <div class="px-4 py-2 rounded-full border border-white/10 text-xs tracking-widest text-gray-400 bg-white/5 backdrop-blur-sm">
+            YOLOv8 ENGINE
+        </div>
+    </nav>
 
-    const formData = new FormData();
-    formData.append('image', input.files[0]);
+    <!-- Main Content -->
+    <main class="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-12 px-8 md:px-16 lg:px-24 items-center z-10 pb-12">
+        
+        <!-- Left Column: Typography & Form -->
+        <div class="flex flex-col gap-8 fade-in" style="animation-delay: 0.1s;">
+            
+            <div class="space-y-4">
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1]">
+                    High-end <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">neural detection.</span>
+                </h1>
+                <p class="text-gray-400 text-lg md:text-xl max-w-md font-light leading-relaxed">
+                    Experience the precision of our custom-trained YOLOv8 model. Upload an image to analyze facial features instantly.
+                </p>
+            </div>
 
-    const response = await fetch('/detect', {
-        method: 'POST',
-        body: formData
-    });
+            <!-- AJAX Enabled Form -->
+            <form id="uploadForm" class="flex flex-col gap-6 mt-4">
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <!-- Premium File Upload Button -->
+                    <label class="group relative cursor-pointer px-6 py-4 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-md transition-all flex items-center justify-center gap-3 w-full sm:w-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 group-hover:scale-110 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span id="file-name-display" class="text-sm font-medium text-gray-200">Choose Image</span>
+                        <!-- ID restored to imageInput to match your original backend script -->
+                        <input type="file" name="image" id="imageInput" accept="image/*" required onchange="previewImage(event)">
+                    </label>
 
-    const data = await response.json();
-    
-    if (data.result_image) {
-        const img = document.getElementById('resultImage');
-        img.src = data.result_image + '?t=' + new Date().getTime(); // Prevent browser caching
-        img.style.display = 'inline-block';
-    } else {
-        alert('Error: ' + data.error);
-    }
-}
-</script>
+                    <!-- Submit Button -->
+                    <button type="submit" id="submit-btn" class="px-8 py-4 rounded-full bg-red-600 hover:bg-red-500 text-white font-semibold transition-all btn-glow w-full sm:w-auto flex items-center justify-center gap-2">
+                        Analyze Now
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            
+            <div class="text-xs text-gray-600 mt-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Supports JPG, PNG, JPEG. Max size 5MB.
+            </div>
+        </div>
 
+        <!-- Right Column: Image Display Area -->
+        <div class="relative w-full max-w-lg mx-auto lg:ml-auto fade-in" style="animation-delay: 0.3s;">
+            <!-- Glow behind the card -->
+            <div class="absolute -inset-1 bg-gradient-to-r from-red-600 to-orange-600 rounded-[2rem] blur opacity-20 pointer-events-none"></div>
+            
+            <!-- Glass Card -->
+            <div class="relative bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-4 min-h-[400px] flex flex-col items-center justify-center overflow-hidden glow-red">
+                
+                <!-- Placeholder State -->
+                <div id="placeholder-container" class="flex flex-col items-center justify-center text-gray-500 z-10 absolute inset-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-sm font-medium">Awaiting Input Target</p>
+                </div>
+                
+                <!-- Unified Image Component (Handles both live preview and finished detection output) -->
+                <img id="resultImage" src="#" alt="Target Frame" class="w-full h-auto object-cover rounded-xl shadow-2xl z-10 hidden relative">
+                
+                <!-- Modern Analytics Overlay -->
+                <div id="analytics-overlay" class="absolute bottom-6 left-6 right-6 bg-black/80 backdrop-blur-md rounded-xl p-4 border border-white/10 justify-between items-center z-20 hidden">
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider">Status</p>
+                        <p class="text-sm font-semibold text-green-400">Detection Complete</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider">Engine Accuracy</p>
+                        <p id="accuracy-display" class="text-sm font-semibold text-white">YOLOv8s Optimized</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript containing asynchronous Fetch logic -->
+    <script>
+        // Local File Live Preview Handler
+        function previewImage(event) {
+            const fileInput = event.target;
+            const file = fileInput.files[0];
+            
+            if (file) {
+                // Update file button label
+                const fileNameDisplay = document.getElementById('file-name-display');
+                let fileName = file.name;
+                if(fileName.length > 15) {
+                    fileName = fileName.substring(0, 15) + '...';
+                }
+                fileNameDisplay.textContent = fileName;
+
+                // Render image as local dataURL
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const resultImg = document.getElementById('resultImage');
+                    const placeholder = document.getElementById('placeholder-container');
+                    const overlay = document.getElementById('analytics-overlay');
+                    
+                    if(resultImg && placeholder) {
+                        resultImg.src = e.target.result;
+                        resultImg.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                        if (overlay) {
+                            overlay.classList.add('hidden');
+                            overlay.classList.remove('flex');
+                        }
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Asynchronous Form Processing & Backend integration
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Stop page reload
+            
+            const input = document.getElementById('imageInput');
+            if (input.files.length === 0) {
+                return;
+            }
+
+            // Put button into "Analyzing" loading state
+            const btn = document.getElementById('submit-btn');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...`;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', input.files[0]);
+
+            try {
+                // Submit target directly to your flask '/detect' route
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Server returned an error status.');
+                }
+
+                const data = await response.json();
+                
+                if (data.result_image) {
+                    const img = document.getElementById('resultImage');
+                    
+                    // Display the detection result image
+                    img.src = data.result_image + '?t=' + new Date().getTime(); // Anti-caching query param
+                    img.classList.remove('hidden');
+                    
+                    const placeholder = document.getElementById('placeholder-container');
+                    if (placeholder) placeholder.classList.add('hidden');
+
+                    // Show the premium stats overlay
+                    const overlay = document.getElementById('analytics-overlay');
+                    if (overlay) {
+                        overlay.classList.remove('hidden');
+                        overlay.classList.add('flex');
+                    }
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown server error'));
+                }
+            } catch (error) {
+                alert('Connection failure: Make sure your flask app.py server is running.');
+                console.error(error);
+            } finally {
+                // Restore button back to normal
+                btn.innerHTML = originalBtnText;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
